@@ -1,0 +1,48 @@
+from google.cloud import bigquery
+from google.cloud import storage
+
+def load_all_csv_from_gcs_to_bigquery(event, context):
+    # Event info
+    bucket_name = event['bucket']
+
+    # BigQuery and Storage clients
+    bigquery_client = bigquery.Client()
+    storage_client = storage.Client()
+
+    # Dataset ID in BigQuery
+    dataset_id = 'supplychain-437321.supplyInfo'
+
+    # Get all files (blobs) from the GCS bucket
+    bucket = storage_client.bucket(bucket_name)
+    blobs = bucket.list_blobs()
+
+    for blob in blobs:
+        if blob.name.endswith('.csv'):  # Only process CSV files
+            source_uri = f"gs://{bucket_name}/{blob.name}"
+            print(f"Loading {source_uri} into BigQuery...")
+
+            # Derive table name from the CSV filename (without extension)
+            table_name = blob.name.split('/')[-1].replace('.csv', '')  # e.g., "orders.csv" becomes "orders"
+
+            # Define full table ID: dataset_id.table_name
+            table_id = f"{dataset_id}.{table_name}"
+
+            # Job configuration to load data
+            job_config = bigquery.LoadJobConfig(
+                source_format=bigquery.SourceFormat.CSV,
+                autodetect=True,  # Automatically detect schema from CSV
+                write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE  # Overwrite existing tables
+            )
+
+            # Load data from GCS into BigQuery
+            load_job = bigquery_client.load_table_from_uri(
+                source_uri,
+                table_id,
+                job_config=job_config
+            )
+            
+            # Wait for the load job to complete
+            load_job.result()
+
+            print(f"Loaded {load_job.output_rows} rows into {table_id} from {source_uri}.")
+
