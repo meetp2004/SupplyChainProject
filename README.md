@@ -81,4 +81,3 @@ The dashboard provides actionable insights for stakeholders:
 
 This project demonstrates the integration of modern data engineering tools and visualization techniques to deliver key insights into the e-commerce space. The dashboard can be expanded to include more metrics and visualizations, such as customer segmentation and predictive analytics.
 
-Feel free to explore the Power BI dashboard to understand the platform’s operations in detail.
